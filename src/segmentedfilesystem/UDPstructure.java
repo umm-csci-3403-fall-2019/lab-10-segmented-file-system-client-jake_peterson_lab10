@@ -5,7 +5,7 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import java.net.DatagramPacket;
 import java.util.*;
 
-public class UDPfile {
+public class UDPstructure {
     public boolean header;
     public boolean end;
     public int length;

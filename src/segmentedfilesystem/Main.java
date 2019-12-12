@@ -1,16 +1,11 @@
 package segmentedfilesystem;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-
-import javax.xml.crypto.Data;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 //import java.net.DatagramPacket;
 //import java.net.DatagramSocket;
 //import java.net.InetAddress;
 import java.net.*;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -25,7 +20,7 @@ public class Main {
         DatagramSocket socket;
         boolean running;
         byte buf[] = new byte[256];
-        HashMap<Byte, UDPfile> fileMap = new HashMap<Byte, UDPfile>();
+        HashMap<Byte, UDPstructure> fileMap = new HashMap<Byte, UDPstructure>();
         ArrayList<Byte> fileIDs = new ArrayList<Byte>();
 
         socket = new DatagramSocket(6014);
@@ -46,7 +41,7 @@ public class Main {
         socket.send(packet);
     }
     //write data to the disk into the correct files
-    public static void writeToDisk(ArrayList<Byte> fileIDs, HashMap<Byte, UDPfile> fileMap)throws IOException{
+    public static void writeToDisk(ArrayList<Byte> fileIDs, HashMap<Byte, UDPstructure> fileMap)throws IOException{
         for(int i =0; i<fileIDs.size();i++){
             DatagramPacket header = getFile(fileIDs, fileMap,i).headerPacket;
             FileOutputStream out = new FileOutputStream(fileMap.get(fileIDs.get(i)).fileName(header));
@@ -56,13 +51,13 @@ public class Main {
         }
     }
     //sort the packets in the files
-    public static void sortPackets(HashMap<Byte, UDPfile> fileMap, ArrayList<Byte> fileIDs){
+    public static void sortPackets(HashMap<Byte, UDPstructure> fileMap, ArrayList<Byte> fileIDs){
         for(int i=0; i<fileIDs.size(); i++){
             fileMap.get(fileIDs.get(i)).sort();
         }
     }
 
-    public static UDPfile getFile(ArrayList<Byte> fileIDs, HashMap<Byte, UDPfile> fileMap, int mapIndex){
+    public static UDPstructure getFile(ArrayList<Byte> fileIDs, HashMap<Byte, UDPstructure> fileMap, int mapIndex){
         return fileMap.get(fileIDs.get(mapIndex));
     }
     public static int calcSize(int big, int small) {
@@ -74,7 +69,7 @@ public class Main {
         }
         return big * 256 + small;
     }
-    public static boolean done(ArrayList<Byte> fileIDs, HashMap<Byte, UDPfile> fileMap){
+    public static boolean done(ArrayList<Byte> fileIDs, HashMap<Byte, UDPstructure> fileMap){
         for(int i = 0; i<fileIDs.size();i++){
             if(!(fileMap.get(fileIDs.get(i)).complete())){
                 return false;
@@ -83,8 +78,8 @@ public class Main {
         return fileIDs.size() == 3;
     }
 
-    //read packets from server***********
-    public static void receive(DatagramSocket socket, HashMap<Byte, UDPfile> fileMap, ArrayList<Byte> fileIDs )throws IOException{
+    //read packets from server
+    public static void receive(DatagramSocket socket, HashMap<Byte, UDPstructure> fileMap, ArrayList<Byte> fileIDs )throws IOException{
         while (!done(fileIDs,fileMap)) {
 
             byte[] buf = new byte[1028];
@@ -94,7 +89,7 @@ public class Main {
             if (buf[0] % 2 == 0) {
                 if (fileMap.get(buf[1]) == null) {
                     fileIDs.add(buf[1]);
-                    fileMap.put(buf[1], new UDPfile());
+                    fileMap.put(buf[1], new UDPstructure());
                 }
                 fileMap.get(buf[1]).add(packet, true, false, 0);
             }
@@ -102,13 +97,13 @@ public class Main {
                 if (buf[0] == (3 % 4)) {
                     if (fileMap.get(buf[1]) == null) {
                         fileIDs.add(buf[1]);
-                        fileMap.put(buf[1], new UDPfile());
+                        fileMap.put(buf[1], new UDPstructure());
                     }
                     fileMap.get(buf[1]).add(packet, false, true, calcSize(buf[2], buf[3]));
                 } else {
                     if (fileMap.get(buf[1]) == null) {
                         fileIDs.add(buf[1]);
-                        fileMap.put(buf[1], new UDPfile());
+                        fileMap.put(buf[1], new UDPstructure());
                     }
                     fileMap.get(buf[1]).add(packet, false, false, 0);
 
